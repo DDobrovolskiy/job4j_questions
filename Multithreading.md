@@ -38,3 +38,5 @@
 29. В чём отличие Thread от FutureTask? В чём отличие Thread.interrupt() и FutureTask.cancel().
 30. Расскажите про шаблон проектирования Producer Consumer.
 
+### interested
+https://smartprogress.do/goal/382579/?lang=ru
