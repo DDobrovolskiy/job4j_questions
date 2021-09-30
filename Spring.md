@@ -65,54 +65,271 @@ private Dependency dependency;
    }
 }
 ```
-5. Что такое ApplicationContext? Когда он создается?
+### 5. Что такое ApplicationContext? Когда он создается?
+Контекст (а у него есть даже интерфейс — ```java org.springframework.context.ApplicationContext ```) — это некоторое окружение, в котором работает приложение на Spring Framework. Страшные аббревиатуры DI, IoC — это всё про него. Собственно, контекст создаёт и хранит экземпляры классов вашего приложения, определяет их зависимости друг с другом и автоматически их задаёт.  
+Безусловно, для того чтобы Spring создал контекст с экземплярами классов, ему нужно предоставить дополнительную информацию — мета-данные, из каких классов/объектов состоит ваше приложение, как они создаются, какие у них есть зависимости и т. д.
+Они отличаются друг от друга именно тем, каким способом задаются мета-данные и где хранится эта конфигурация. Например:
+— ```java ClassPathXmlApplicationContext ``` — метаданные конфигурируются XML-файлом(-ами) и они лежат в classpath, т. е. в ресурсах модуля;
+— ```java FileSystemXmlApplicationContext ``` — метаданные тоже конфигурируются XML-файлом(-ами), но они находятся где-то в файловой системе, например, /etc/yourapp/spring-context.xml;
+— ```java AnnotationConfigApplicationContext ``` — метаданные конфигурируются с помощью аннотаций прямо на классах.  
+Это класс, который в основном представляет собой реестр всех бобов, загруженных spring. В общем случае запуск spring означает поиск загружаемых бобов и помещение их в контекст приложения (это относится только к синглетам, бобы областей прототипов не хранятся в ApplicationContext ).  
+
+### 6. Расскажите, что такое Spring Bean? Опишите жизненный цикл Spring Bean?
+Знакомство со Spring IoC начнем с главного термина: бин (англ. — bean). Самыми простыми словами,
+> Бин — создаваемый Spring-ом объект класса, который можно внедрить в качестве значения поля в другой объект.
+
+Хотите словами посложнее? А пожалуйста:
+> Бин — объект класса, представляющий собой завершенный программный элемент с определенной бизнес-функцией либо внутренней функцией Spring'а, жизненным циклом которого управляет контейнер бинов.  
+
+![303.jpg](https://itsobes.ru/assets/JavaSobes/303.jpg)  
+следующие этапы проходит каждый отдельно взятый бин:
+
+1. Инстанцирование объекта. Техническое начало жизни бина, работа конструктора его класса;
+
+2. Установка свойств из конфигурации бина, внедрение зависимостей;
+
+3. Нотификация aware-интерфейсов. BeanNameAware, BeanFactoryAware и другие. Мы уже писали о таких интерфейсах ранее. Технически, выполняется системными подтипами BeanPostProcessor, и совпадает с шагом 4;
+
+4. Пре-инициализация – метод postProcessBeforeInitialization() интерфейса BeanPostProcessor;
+
+5. Инициализация. Разные способы применяются в таком порядке:
+• Метод бина с аннотацией @PostConstruct из стандарта JSR-250 (рекомендуемый способ);
+• Метод afterPropertiesSet() бина под интерфейсом InitializingBean;
+• Init-метод. Для отдельного бина его имя устанавливается в параметре определения initMethod. В xml-конфигурации можно установить для всех бинов сразу, с помощью default-init-method;
+
+6. Пост-инициализация – метод postProcessAfterInitialization() интерфейса BeanPostProcessor.
+Когда IoC-контейнер завершает свою работу, мы можем кастомизировать этап штатного уничтожения бина. Как со всеми способами финализации в Java, при жестком выключении (kill -9) гарантии вызова этого этапа нет. Три альтернативных способа «деинициализации» вызываются в том же порядке, что симметричные им методы инициализации:
+
+1. Метод с аннотацией @PreDestroy;
+2. Метод с именем, которое указано в свойстве destroyMethod определния бина (или в глобальном default-destroy-method);
+3. Метод destroy() интерфейса DisposableBean.
+
+Не следует путать жизненный цикл отдельного бина с жизненным циклом контекста и этапами подготовки фабрик бинов. О них мы поговорим в будущих публикациях.
+### 7. Объясните для чего используются аннотации @Autowired @Qualifier. Когда, какой нужно использовать?
+> @Autowired - используется для автоматического связывания зависимостей в spring beans. 
+> @Qualifier - используется совместно с @Autowired для уточнения данных связывания, когда возможны коллизии (например одинаковых имен\типов).
+### 8. Что такое FactoryBeans?
+BeanFactory можно понимать как фабричный класс, содержащий коллекцию bean-компонентов. BeanFactory содержит определение типа bean-компонента, так что соответствующий bean-компонент может быть создан при получении клиентского запроса.  
+BeanFactory также может создавать отношения между кооперативными классами при создании экземпляров объектов. Это освободит сам компонент и конфигурацию клиента компонента. BeanFactory также содержит управление жизненным циклом компонента, вызывая методы инициализации клиента (методы инициализации) и методы уничтожения (методы уничтожения).
+### 9. Что такое Profiles? Когда их используют.
+Активный профиль задается в файле application.properties:  
+```java
+spring.profiles.active=dev
+```
+Для каждого профиля создадим соотвествующий файл:  
+```java
+application-dev.properties
+application-test.properties
+application-prod.properties
+```
+Поскольку в application.properties стоит активация профиля dev, DataSource будет инициализироваться настройками файла application-dev.properties
+Тестировочный профиль активируется с помощью аннотации @ActiveProfiles(«test»):  
+```java
+@ActiveProfiles("test")
+@RunWith(SpringRunner.class)
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
+```
+Допустим, нам нужно создавать определенный бин только для определенного профиля. Для этого можно аннотировать бин с помощью @Profile. Аннотация применима как к классу, так и к методу.  
+Давайте аннотируем класс ExampleTestBean, экземпляр которого будет создаваться только при активном профиле test:  
+```java
+@Profile("test")
+@Component
+public class ExampleTestBean {
+}
+```
+Обратите внимание, что в предыдущем примере мы взяли и напечатали текущий активный профиль:  
+```java
+for (final String profileName : environment.getActiveProfiles()) {
+    System.out.println("Currently active profile - " + profileName);
+}
+```
+### 10. Расскажите про модуль Spring AOP.
+ Модуль AOP в Spring обеспечивает нас такими сущностями, как “перехватчики” (interceptors) для перехвата приложения в определённые моменты. Например, когда выполняется определённый метод, мы можем добавить какую-то функциональность (к примеру, сделать запись в лог-файл приложения) как до, так и после выполнения метода.  
+```java
+import org.aspectj.lang.annotation.*;
+
+@Aspect
+public class Logging {
+
+    @Pointcut("execution(* net.proselyte.aop.*.*(..))")
+    public void selectAllMethodsAvaliable() {
+
+    }
+
+    @Before("selectAllMethodsAvaliable()")
+    public void beforeAdvice() {
+        System.out.println("Now we are going to initiate developer's profile.");
+    }
+
+    @After("selectAllMethodsAvaliable()")
+    public void afterAdvice() {
+        System.out.println("Developer's profile has been initiated.");
+    }
+
+    @AfterReturning(pointcut = "selectAllMethodsAvaliable()", returning = "someValue")
+    public void afterReturningAdvice(Object someValue) {
+        System.out.println("Value: " + someValue.toString());
+    }
+
+    @AfterThrowing(pointcut = "selectAllMethodsAvaliable()", throwing = "e")
+    public void inCaseOfExceptionThrowAdvice(ClassCastException e) {
+        System.out.println("We have an exception here: " + e.toString());
+    }
+
+}
+```
+### 11. Объясните шаблон проектирование Proxy? Где он используется в Spring.
+Proxy (Заместитель)  
+Паттерн Proxy широко используется в AOP и remoting.  
+Хороший пример использования Proxy — это org.springframework.aop.framework.ProxyFactoryBean.  
+Эта фабрика создаёт AOP-прокси на основе Spring-бина.  
+Прокси предоставляет заместителя для другого объекта, чтобы контролировать доступ к нему.
+```java
+public class Main {
+	
+	public static void main(String[] args) {
+		// Create math proxy
+		IMath p = new MathProxy();
+
+		// Do the math
+		System.out.println("4 + 2 = " + p.add(4, 2));
+		System.out.println("4 - 2 = " + p.sub(4, 2));
+		System.out.println("4 * 2 = " + p.mul(4, 2));
+		System.out.println("4 / 2 = " + p.div(4, 2));
+	}
+}
+
+/**
+ * "Subject"
+ */
+public interface IMath {
+
+	public double add(double x, double y);
+
+	public double sub(double x, double y);
+
+	public double mul(double x, double y);
+
+	public double div(double x, double y);
+}
+
+/**
+ * "Real Subject"
+ */
+public class Math implements IMath {
+
+	public double add(double x, double y) {
+		return x + y;
+	}
+
+	public double sub(double x, double y) {
+		return x - y;
+	}
+
+	public double mul(double x, double y) {
+		return x * y;
+	}
+
+	public double div(double x, double y) {
+		return x / y;
+	}
+}
+
+/**
+ * "Proxy Object"
+ */
+public class MathProxy implements IMath {
+
+    private Math math;
+
+    public double add(double x, double y) {
+        lazyInitMath();
+        return math.add(x, y);
+    }
+
+    public double sub(double x, double y) {
+        lazyInitMath();
+        return math.sub(x, y);
+    }
+
+    public double mul(double x, double y) {
+        lazyInitMath();
+        return math.mul(x, y);
+    }
+
+    public double div(double x, double y) {
+        lazyInitMath();
+        return math.div(x, y);
+    }
+
+    private void lazyInitMath() {
+        if (math == null) {
+            math = new Math();
+        }
+    }
+}
+```
+### 12. Объясните, как происходит интеграция с JDBC.
+На данном этапы мы напишем все через JDBC. Spring напрямую не работает с базой. Он использует JDBC библиотеки.
+Spring оборачивает JDBC в свои классы, делая их удобными для работы. Здесь используется шаблон "Декоратор".
+@Configuration
+@PropertySource("classpath:app.properties")
+@EnableTransactionManagement
+public class JdbcConfig {
+
+    @Bean
+    public DataSource ds(@Value("${jdbc.driver}") String driver,
+                         @Value("${jdbc.url}") String url,
+                         @Value("${jdbc.username}") String username,
+                         @Value("${jdbc.password}") String password) {
+        BasicDataSource ds = new BasicDataSource();
+        ds.setDriverClassName(driver);
+        ds.setUrl(url);
+        ds.setUsername(username);
+        ds.setPassword(password);
+        return ds;
+    }
+
+    @Bean
+    public JdbcTemplate jdbc(DataSource ds) {
+        return new JdbcTemplate(ds);
+    }
+
+}
  
-6. Расскажите, что такое Spring Bean? Опишите жизненный цикл Spring Bean?
+### 13. Объясните, как происходит интеграция с Hibernate.
+Для интеграции Hibernate в Spring необходимо подключить зависимости, а так же настроить файл конфигурации Spring. Т.к. настройки несколько отличаются между проектами и версиями, то смотрите официальную документацию Spring и Hibernate для уточнения настроек для конкретных технологий.
  
-7. Объясните для чего используются аннотации @Autowired @Qualifier. Когда, какой нужно использовать?
+### 14. Что такое Transaction Manager? Где он используется? Когда он нужен?
  
-8. Что такое FactoryBeans?
+### 15. Расскажите о модуле Spring MVC.
  
-9. Что такое Profiles? Когда их используют.
+### 16. Объясните верхнеуровневую архитектуру Spring MVC: Dispatcher, ViewResolver.
  
-10. Расскажите про модуль Spring AOP.
+### 17. Как конфигурировать Spring MVC?
  
-11. Объясните шаблон проектирование Proxy? Где он используется в Spring.
+### 18. Что такое Spring scope? Какие типы Spring scope существуют?
  
-12. Объясните, как происходит интеграция с JDBC.
+### 19. Расскажите про аннотации @RequestMapping, @PathVariable, @RequestBody, @RequestParam, @ModelAttribute, @ResponseBody, @SessionAttribute, @CookieValue.
  
-13. Объясните, как происходит интеграция с Hibernate.
+### 20. Расскажите про модуль Spring Security?
  
-14. Что такое Transaction Manager? Где он используется? Когда он нужен?
+### 21. Как конфигурировать Spring Security?
  
-15. Расскажите о модуле Spring MVC.
+### 22. Что такое UserDetails?
  
-16. Объясните верхнеуровневую архитектуру Spring MVC: Dispatcher, ViewResolver.
+### 23.  Расскажите верхнеуровневую архитектуру Spring Security.
  
-17. Как конфигурировать Spring MVC?
+### 24. Что такое FilterChainProxy?
  
-18. Что такое Spring scope? Какие типы Spring scope существуют?
+### 25. Расскажите о схеме работы пользователь-роль.
  
-19. Расскажите про аннотации @RequestMapping, @PathVariable, @RequestBody, @RequestParam, @ModelAttribute, @ResponseBody, @SessionAttribute, @CookieValue.
+### 26. Расскажите о SpringContextHolder.
  
-20. Расскажите про модуль Spring Security?
+### 27. Расскажите об аспектах многопоточного окружения в Spring.
  
-21. Как конфигурировать Spring Security?
+### 28. Расскажите о тестирование Spring приложений?
  
-22. Что такое UserDetails?
+### 29. Расскажите о тестирование Spring MVС приложений.
  
-23.  Расскажите верхнеуровневую архитектуру Spring Security.
- 
-24. Что такое FilterChainProxy?
- 
-25. Расскажите о схеме работы пользователь-роль.
- 
-26. Расскажите о SpringContextHolder.
- 
-27. Расскажите об аспектах многопоточного окружения в Spring.
- 
-28. Расскажите о тестирование Spring приложений?
- 
-29. Расскажите о тестирование Spring MVС приложений.
- 
-30. Расскажите о мониторинге Spring приложений.
+### 30. Расскажите о мониторинге Spring приложений.
