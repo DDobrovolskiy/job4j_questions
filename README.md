@@ -1,7 +1,7 @@
 # job4j_questions
 Questions on course Job4j
 
-## Junior
+## Trainee
 >[1. Core](Core.md)  
 >[2. OOP](OOP.md)  
 >[3. Stream](stream.md)  
