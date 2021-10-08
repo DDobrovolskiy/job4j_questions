@@ -2,8 +2,10 @@
 Questions on course Job4j
 
 ## Junior
->[1. Collections](Collections.md)
->[1. SOLID](SOLID.md)  
+>[1. Collections](Collections.md)  
+>[2. IO](io.md)  
+>[3. SQL](SQL.md)  
+>[5. SOLID](SOLID.md)  
 
 ## Middle
 >[1. Multithreading](Multithreading.md)  
