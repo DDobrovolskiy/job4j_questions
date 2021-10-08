@@ -5,6 +5,7 @@ Questions on course Job4j
 >[1. Collections](Collections.md)  
 >[2. IO](io.md)  
 >[3. SQL](SQL.md)  
+>[4. Garbage](Garbage.md)  
 >[5. SOLID](SOLID.md)  
 
 ## Middle
