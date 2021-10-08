@@ -2,6 +2,12 @@
 Questions on course Job4j
 
 ## Junior
+>[1. Core](Core.md)  
+>[2. OOP](OOP.md)  
+>[3. Stream](stream.md)  
+>[4. CollectionsLite](CollectionsLite.md)  
+
+## Junior
 >[1. Collections](Collections.md)  
 >[2. IO](io.md)  
 >[3. SQL](SQL.md)  
