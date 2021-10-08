@@ -2,6 +2,7 @@
 Questions on course Job4j
 
 ## Junior
+>[1. Collections](Collections.md)
 >[1. SOLID](SOLID.md)  
 
 ## Middle
